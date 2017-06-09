@@ -1,4 +1,5 @@
 sample/
 motion
 *.pyc
-
+settings.py
+.idea/
