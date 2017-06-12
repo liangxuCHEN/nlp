@@ -19,6 +19,7 @@ from tgrocery import Grocery
 
 # 调用 readLines 读取停用词
 BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'chat_data_mining', 'DM_sentiment')
+# BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),'nlp')
 STOP_WORDS = None
 TABLE = 'T_DCR_Comment'
 log = None
@@ -94,7 +95,9 @@ def nlp_process_with_sw(data, model):
         if w.word not in STOP_WORDS:
             new_sent[w.flag].append(w.word)
             sentence += w.word + ' '
-    predict_tag = model.predict(sentence.strip())
+    predict_tag = str(model.predict(sentence.strip()))
+    return new_sent, res_s.sentiments, unicode(predict_tag, 'utf8')
+
     return new_sent, res_s.sentiments, predict_tag
 
 

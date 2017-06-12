@@ -3,3 +3,5 @@ motion
 *.pyc
 settings.py
 .idea/
+log/
+*.txt
