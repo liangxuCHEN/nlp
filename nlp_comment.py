@@ -13,6 +13,7 @@ from sqlalchemy import create_engine
 import logging
 from collections import defaultdict
 import settings
+import jieba.posseg as pseg
 from tgrocery import Grocery
 
 
@@ -86,11 +87,14 @@ def insert_data(insert_list):
 def nlp_process_with_sw(data, model):
     content = data['RateContent']
     res_s = SnowNLP(content)
+    words = pseg(content)
     new_sent = defaultdict(list)
-    for tag in res_s.tags:
-        if tag[0] not in STOP_WORDS:
-            new_sent[tag[1]].append(tag[0])
-    predict_tag = model.predict(''.join(res_s.words))
+    sentence = ''
+    for w in words:
+        if w.word not in STOP_WORDS:
+            new_sent[w.flag].append(w.word)
+            sentence += w.word + ' '
+    predict_tag = model.predict(sentence.strip())
     return new_sent, res_s.sentiments, predict_tag
 
 
@@ -152,7 +156,7 @@ def read_lines(filename):
 
 if __name__ == '__main__':
     created = dt.today()
-    begin_date = dt(2017, 4, 16)
+    begin_date = dt(2017, 2, 16)
     log = log_init('%s.log' % created.strftime('%Y_%m_%d'))
     log.info('initiation the data.....')
     score_var = list()
