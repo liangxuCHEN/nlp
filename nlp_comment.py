@@ -88,17 +88,17 @@ def insert_data(insert_list):
 def nlp_process_with_sw(data, model):
     content = data['RateContent']
     res_s = SnowNLP(content)
-    words = pseg(content)
+    words = pseg.cut(content)
     new_sent = defaultdict(list)
     sentence = ''
     for w in words:
         if w.word not in STOP_WORDS:
             new_sent[w.flag].append(w.word)
             sentence += w.word + ' '
+    # 标签分类
+    # TODO：多标签分类，引入更多维度的标签
     predict_tag = str(model.predict(sentence.strip()))
     return new_sent, res_s.sentiments, unicode(predict_tag, 'utf8')
-
-    return new_sent, res_s.sentiments, predict_tag
 
 
 def load_data(id_list, begin_date, end_date):
@@ -159,12 +159,12 @@ def read_lines(filename):
 
 if __name__ == '__main__':
     created = dt.today()
-    begin_date = dt(2017, 2, 16)
+    begin_date = dt(2000, 2, 16)
     log = log_init('%s.log' % created.strftime('%Y_%m_%d'))
     log.info('initiation the data.....')
     score_var = list()
     STOP_WORDS = read_lines(os.path.join(BASE_DIR, 's_w.txt'))
     # TODO:后面从POST取得
-    treasure_ids = ('521307282427', '36809342636')
+    treasure_ids = ('23083488420', '36809342636')
     insert_data(get_data(treasure_ids, begin_date, created))
     log.info('-------------Finish the work---------------')
