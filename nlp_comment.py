@@ -9,7 +9,7 @@ import pymssql
 import sqlalchemy
 from sqlalchemy.pool import NullPool
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, bindparam
 import logging
 from collections import defaultdict
 import settings
@@ -31,8 +31,8 @@ def log_init(file_name):
     logging.info('This is info message')
     logging.warning('This is warning message')
     """
-    path = os.path.join(BASE_DIR, 'log')
-    file_name = os.path.join(path, file_name)
+    #path = os.path.join(BASE_DIR, 'log')
+    #file_name = os.path.join(path, file_name)
 
     level = logging.DEBUG
     logging.basicConfig(level=level,
@@ -68,12 +68,26 @@ def init_connection():
     return engine, connection, table_schema
 
 
-def insert_data(insert_list):
+def insert_data(insert_list, ids):
     log.info('Saving the data.....')
     engine, connection, table_schema = init_connection()
     # 创建Session:
     Session = sessionmaker(bind=engine)
     session = Session()
+
+    # 添加之前先删除之前的统计
+    sql_text = table_schema.delete().where(table_schema.columns.TreasureID == bindparam('TreasureID'))
+    print sql_text
+    content = list()
+    for i in ids:
+        content.append({
+            'TreasureID': i,
+        })
+    print content
+    connection.execute(sql_text, content)
+    session.commit()
+
+    # 添加新的统计
     try:
         connection.execute(table_schema.insert(), insert_list)
         session.commit()
@@ -159,12 +173,18 @@ def read_lines(filename):
 
 if __name__ == '__main__':
     created = dt.today()
-    begin_date = dt(2000, 2, 16)
+    begin_date = dt(1900, 2, 16)
+
     log = log_init('%s.log' % created.strftime('%Y_%m_%d'))
     log.info('initiation the data.....')
-    score_var = list()
-    STOP_WORDS = read_lines(os.path.join(BASE_DIR, 's_w.txt'))
-    # TODO:后面从POST取得
-    treasure_ids = ('23083488420', '36809342636')
-    insert_data(get_data(treasure_ids, begin_date, created))
+
+    # STOP_WORDS = read_lines(os.path.join(BASE_DIR, 's_w.txt'))
+
+    # TODO:读取评论ids
+    df_ids = pd.read_excel('treasure_ids.xls')
+    ids_list = list()
+    for i in range(0, 30, 2):
+        treasure_ids = (df_ids.iloc[i]['TreasureID'], df_ids.iloc[i+1]['TreasureID'])
+        insert_data(get_data(treasure_ids, begin_date, created), treasure_ids)
+        log.info('------ Finish: %s  -------' % str(treasure_ids))
     log.info('-------------Finish the work---------------')
