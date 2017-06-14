@@ -77,13 +77,11 @@ def insert_data(insert_list, ids):
 
     # 添加之前先删除之前的统计
     sql_text = table_schema.delete().where(table_schema.columns.TreasureID == bindparam('TreasureID'))
-    print sql_text
     content = list()
     for i in ids:
         content.append({
             'TreasureID': i,
         })
-    print content
     connection.execute(sql_text, content)
     session.commit()
 
@@ -178,7 +176,7 @@ if __name__ == '__main__':
     log = log_init('%s.log' % created.strftime('%Y_%m_%d'))
     log.info('initiation the data.....')
 
-    # STOP_WORDS = read_lines(os.path.join(BASE_DIR, 's_w.txt'))
+    STOP_WORDS = read_lines(os.path.join(BASE_DIR, 's_w.txt'))
 
     # TODO:读取评论ids
     df_ids = pd.read_excel('treasure_ids.xls')
