@@ -14,8 +14,11 @@ import logging
 from collections import defaultdict
 import settings
 import jieba.posseg as pseg
+from datetime import timedelta
+from datetime import datetime as dt
 from tgrocery import Grocery
 
+import sql
 
 # 调用 readLines 读取停用词
 # BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'chat_data_mining', 'DM_sentiment')
@@ -154,6 +157,7 @@ def get_data(ids,  b_date, end_data):
             'TreasureID': df.iloc[record_data]['TreasureID'],
             'Level': level,
             'Tag': tag,
+            'Sentence': df.iloc[record_data]['RateContent'],
         })
     return res
 
@@ -169,6 +173,56 @@ def read_lines(filename):
     return data
 
 
+def read_xls(filename):
+    df_ids = pd.read_excel(filename)
+
+    ids_list = list()
+    for i in range(len(df_ids)):
+        ids_list.append(df_ids.iloc[i]['TreasureID'])
+    return ids_list
+
+
+def read_db(begin_date):
+    begin_date = (begin_date - timedelta(days=1)).strftime('%Y-%m-%d')
+    projects = sql.get_project_data(begin_date)
+    log.info('having %d projects today.' % len(projects))
+    insert_jobs = list()
+    check_jobs = list()
+    # 区分任务
+    for project in projects:
+        if project[1] != 1:
+            # 可以去统计
+            check_jobs.append(project[0])
+            # 初始所有jobs 都是新的
+            insert_jobs.append(project[0])
+
+    # 检查是否已经统计
+    jobs = sql.check_jobs_in_db(check_jobs)
+    # 根据状态，选择需要统计的宝贝评论，如果更新时间不是同一天，更新状态，再统计，
+    # 同一天，就忽略
+    project_ids = list()
+
+    for job in jobs:
+        if job[1] < begin_date:
+            project_ids.append(job[0])
+
+        # 删掉已经存在job
+        if job[0] in insert_jobs:
+            insert_jobs.remove(job[0])
+
+    # 插入新任务
+    project_ids += insert_jobs
+    # find all the treasure ids
+    if len(project_ids) == 0:
+        log.info('Do not have new work to do and finish .....')
+        exit(0)
+    res = sql.find_treasure_ids(project_ids)
+    t_ids = list()
+    for t_id in res:
+        t_ids.append(str(t_id[0]))
+    return t_ids, project_ids
+
+
 if __name__ == '__main__':
     created = dt.today()
     begin_date = dt(1900, 2, 16)
@@ -177,14 +231,18 @@ if __name__ == '__main__':
     log.info('initiation the data.....')
 
     STOP_WORDS = read_lines(os.path.join(BASE_DIR, 's_w.txt'))
+    # 读取评论ids
+    # treasure_ids = read_xls('treasure_ids.xls')
 
-    # TODO:读取评论ids
-    df_ids = pd.read_excel('treasure_ids.xls')
-    ids_list = list()
-    df_ids['TreasureID'] =  df_ids['TreasureID'].astype('str')
-    for i in range(242, len(df_ids)):
-        ids_list.append(df_ids.iloc[i]['TreasureID'])
-    treasure_ids = tuple(ids_list)
+    # 读取数据库的ids
+    treasure_ids, p_ids = read_db(created)
+
+    log.info('Having %d treasures to do' % len(treasure_ids))
     insert_data(get_data(treasure_ids, begin_date, created), treasure_ids)
+
+    # 更新project状态
+    sql.finish_jobs(p_ids, created)
+
     log.info('------ Finish: %s  -------' % str(treasure_ids))
+
     log.info('-------------Finish the work---------------')
