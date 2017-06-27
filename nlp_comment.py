@@ -136,6 +136,7 @@ def get_data(ids,  b_date, end_data):
     end_data = end_data.strftime('%Y-%m-%d')
     # 选择数据来源
     df = load_data(ids, b_date, end_data)
+    exit()
     # df = load_data_excel()
     # df = pd.read_excel('data_treasure.xls')
     df['RateDate'] = pd.to_datetime(df['RateDate'])
@@ -220,7 +221,7 @@ def read_db(begin_date):
     t_ids = list()
     for t_id in res:
         t_ids.append(str(t_id[0]))
-    return t_ids, project_ids
+    return tuple(t_ids), project_ids
 
 
 if __name__ == '__main__':
@@ -230,7 +231,7 @@ if __name__ == '__main__':
     log = log_init('%s.log' % created.strftime('%Y_%m_%d'))
     log.info('initiation the data.....')
 
-    STOP_WORDS = read_lines(os.path.join(BASE_DIR, 's_w.txt'))
+    # STOP_WORDS = read_lines(os.path.join(BASE_DIR, 's_w.txt'))
 
     # 读取评论ids
     # treasure_ids = read_xls('treasure_ids.xls')
