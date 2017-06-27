@@ -106,10 +106,13 @@ def nlp_process_with_sw(data, model):
     words = pseg.cut(content)
     new_sent = defaultdict(list)
     sentence = ''
-    for w in words:
-        if w.word not in STOP_WORDS:
-            new_sent[w.flag].append(w.word)
-            sentence += w.word + ' '
+    try:
+        for w in words:
+            if w.word not in STOP_WORDS:
+                new_sent[w.flag].append(w.word)
+                sentence += w.word + ' '
+    except:
+        print content
     # 标签分类
     # TODO：多标签分类，引入更多维度的标签
     predict_tag = str(model.predict(sentence.strip()))

@@ -31,7 +31,7 @@ if __name__ == '__main__':
     log = log_init('%s.log' % created.strftime('%Y_%m_%d'))
     log.info('initiation the data.....')
 
-    # STOP_WORDS = read_lines(os.path.join(BASE_DIR, 's_w.txt'))
+    STOP_WORDS = read_lines(os.path.join(BASE_DIR, 's_w.txt'))
 
     treasure_ids = init_parser()
 
