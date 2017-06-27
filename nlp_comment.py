@@ -21,8 +21,8 @@ from tgrocery import Grocery
 import sql
 
 # 调用 readLines 读取停用词
-BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'chat_data_mining', 'DM_sentiment')
-# BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),'nlp')
+# BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'chat_data_mining', 'DM_sentiment')
+BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),'nlp')
 STOP_WORDS = None
 TABLE = 'T_DCR_Comment'
 log = None
@@ -34,8 +34,8 @@ def log_init(file_name):
     logging.info('This is info message')
     logging.warning('This is warning message')
     """
-    #path = os.path.join(BASE_DIR, 'log')
-    #file_name = os.path.join(path, file_name)
+    path = os.path.join(BASE_DIR, 'log')
+    file_name = os.path.join(path, file_name)
 
     level = logging.DEBUG
     logging.basicConfig(level=level,
@@ -231,8 +231,7 @@ if __name__ == '__main__':
     log = log_init('%s.log' % created.strftime('%Y_%m_%d'))
     log.info('initiation the data.....')
 
-    # STOP_WORDS = read_lines(os.path.join(BASE_DIR, 's_w.txt'))
-
+    STOP_WORDS = read_lines(os.path.join(BASE_DIR, 's_w.txt'))
     # 读取评论ids
     # treasure_ids = read_xls('treasure_ids.xls')
 
