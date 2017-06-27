@@ -23,9 +23,8 @@ import sql
 # 调用 readLines 读取停用词
 # BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'chat_data_mining', 'DM_sentiment')
 BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),'nlp')
-STOP_WORDS = None
+
 TABLE = 'T_DCR_Comment'
-log = None
 
 
 def log_init(file_name):
@@ -100,19 +99,16 @@ def insert_data(insert_list, ids, log):
         connection.close()
 
 
-def nlp_process_with_sw(data, model):
+def nlp_process_with_sw(data, model, s_w):
     content = data['RateContent']
     res_s = SnowNLP(content)
     words = pseg.cut(content)
     new_sent = defaultdict(list)
     sentence = ''
-    try:
-        for w in words:
-            if w.word not in STOP_WORDS:
-                new_sent[w.flag].append(w.word)
-                sentence += w.word + ' '
-    except:
-        print content
+    for w in words:
+        if w.word not in s_w:
+            new_sent[w.flag].append(w.word)
+            sentence += w.word + ' '
     # 标签分类
     # TODO：多标签分类，引入更多维度的标签
     predict_tag = str(model.predict(sentence.strip()))
@@ -134,7 +130,7 @@ def load_data_excel():
     return df
 
 
-def get_data(ids,  b_date, end_data, log):
+def get_data(ids,  b_date, end_data, log, stop_word):
     b_date = b_date.strftime('%Y-%m-%d')
     end_data = end_data.strftime('%Y-%m-%d')
     # 选择数据来源
@@ -152,7 +148,7 @@ def get_data(ids,  b_date, end_data, log):
         # 按日期分类摘取内容
         # tmp_df = df[df['RateDate'] > df_group.index[record_data]][df['RateDate'] < df_group.index[record_data + 1]]
         # 自然语言处理
-        content_sw, level, tag = nlp_process_with_sw(df.iloc[record_data], new_grocery)
+        content_sw, level, tag = nlp_process_with_sw(df.iloc[record_data], new_grocery, stop_word)
         # 记录结果
         res.append({
             'RateContent': json.dumps(content_sw, ensure_ascii=False),
@@ -233,7 +229,7 @@ if __name__ == '__main__':
     log = log_init('%s.log' % created.strftime('%Y_%m_%d'))
     log.info('initiation the data.....')
 
-    STOP_WORDS = read_lines(os.path.join(BASE_DIR, 's_w.txt'))
+    stop_word = read_lines(os.path.join(BASE_DIR, 's_w.txt'))
     # 读取评论ids
     # treasure_ids = read_xls('treasure_ids.xls')
 
@@ -241,7 +237,7 @@ if __name__ == '__main__':
     treasure_ids, p_ids = read_db(created, log)
 
     log.info('Having %d treasures to do' % len(treasure_ids))
-    insert_data(get_data(treasure_ids, begin_date, created, log), treasure_ids, log)
+    insert_data(get_data(treasure_ids, begin_date, created, log, stop_word), treasure_ids, log)
 
     # 更新project状态
     sql.finish_jobs(p_ids, created)

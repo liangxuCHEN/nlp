@@ -36,7 +36,7 @@ if __name__ == '__main__':
     treasure_ids = init_parser()
 
     log.info('Having %d treasures to do' % len(treasure_ids))
-    insert_data(get_data(treasure_ids, begin_date, created, log), treasure_ids, log)
+    insert_data(get_data(treasure_ids, begin_date, created, log, STOP_WORDS), treasure_ids, log)
 
 
     log.info('------ Finish: %s  -------' % str(treasure_ids))
