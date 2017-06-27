@@ -71,7 +71,7 @@ def init_connection():
     return engine, connection, table_schema
 
 
-def insert_data(insert_list, ids):
+def insert_data(insert_list, ids, log):
     log.info('Saving the data.....')
     engine, connection, table_schema = init_connection()
     # 创建Session:
@@ -131,12 +131,11 @@ def load_data_excel():
     return df
 
 
-def get_data(ids,  b_date, end_data):
+def get_data(ids,  b_date, end_data, log):
     b_date = b_date.strftime('%Y-%m-%d')
     end_data = end_data.strftime('%Y-%m-%d')
     # 选择数据来源
     df = load_data(ids, b_date, end_data)
-    exit()
     # df = load_data_excel()
     # df = pd.read_excel('data_treasure.xls')
     df['RateDate'] = pd.to_datetime(df['RateDate'])
@@ -144,7 +143,7 @@ def get_data(ids,  b_date, end_data):
     res = list()
     log.info('Have %d comments need to process' % len(df))
     # 分类模型导入
-    new_grocery = Grocery('sample')
+    new_grocery = Grocery('sample2')
     new_grocery.load()
     for record_data in range(0, len(df)):
         # 按日期分类摘取内容
@@ -183,7 +182,7 @@ def read_xls(filename):
     return ids_list
 
 
-def read_db(begin_date):
+def read_db(begin_date, log):
     begin_date = (begin_date - timedelta(days=1)).strftime('%Y-%m-%d')
     projects = sql.get_project_data(begin_date)
     log.info('having %d projects today.' % len(projects))
@@ -236,10 +235,10 @@ if __name__ == '__main__':
     # treasure_ids = read_xls('treasure_ids.xls')
 
     # 读取数据库的ids
-    treasure_ids, p_ids = read_db(created)
+    treasure_ids, p_ids = read_db(created, log)
 
     log.info('Having %d treasures to do' % len(treasure_ids))
-    insert_data(get_data(treasure_ids, begin_date, created), treasure_ids)
+    insert_data(get_data(treasure_ids, begin_date, created, log), treasure_ids, log)
 
     # 更新project状态
     sql.finish_jobs(p_ids, created)
