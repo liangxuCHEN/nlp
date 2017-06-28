@@ -182,8 +182,8 @@ def read_xls(filename):
 
 
 def read_db(begin_date, log):
-    begin_date = (begin_date - timedelta(days=1)).strftime('%Y-%m-%d')
-    projects = sql.get_project_data(begin_date)
+    begin_date_stamp = (begin_date - timedelta(days=1)).strftime('%Y-%m-%d')
+    projects = sql.get_project_data(begin_date_stamp)
     log.info('having %d projects today.' % len(projects))
     insert_jobs = list()
     check_jobs = list()
@@ -202,7 +202,8 @@ def read_db(begin_date, log):
     project_ids = list()
 
     for job in jobs:
-        if job[1] < begin_date:
+        tmp_time =  dt.strptime(job[1].split('.')[0], '%Y-%m-%d %H:%M:%S')
+        if tmp_time < begin_date:
             project_ids.append(job[0])
 
         # 删掉已经存在job
