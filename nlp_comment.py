@@ -200,10 +200,10 @@ def read_db(begin_date, log):
     # 根据状态，选择需要统计的宝贝评论，如果更新时间不是同一天，更新状态，再统计，
     # 同一天，就忽略
     project_ids = list()
-
+    today = begin_date.replace(begin_date.year, begin_date.month, begin_date.day, 0, 0)
     for job in jobs:
         tmp_time =  dt.strptime(job[1].split('.')[0], '%Y-%m-%d %H:%M:%S')
-        if tmp_time < begin_date:
+        if tmp_time < today:
             project_ids.append(job[0])
 
         # 删掉已经存在job
@@ -236,7 +236,6 @@ if __name__ == '__main__':
 
     # 读取数据库的ids
     treasure_ids, p_ids = read_db(created, log)
-
     log.info('Having %d treasures to do' % len(treasure_ids))
     insert_data(get_data(treasure_ids, begin_date, created, log, stop_word), treasure_ids, log)
 
