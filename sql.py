@@ -102,7 +102,7 @@ def check_jobs_in_db(itemids):
     # 根据状态，选择需要统计的宝贝评论，如果更新时间不是同一天，更新状态，再统计，
     # 同一天，但状态是没有统计，就统计，已经统计，就忽略
     if len(itemids) == 1:
-        itemids.append('')
+        itemids.append(itemids[0])
     itemids = [str(x) for x in itemids]
     conn = Mssql(HOST_190, USER, PWD, DB_DM)
     sql_text = "select * from T_DCR_CustomCommentStatus where ItemID in {itemids}".format(

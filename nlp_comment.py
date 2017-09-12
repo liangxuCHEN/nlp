@@ -196,6 +196,7 @@ def read_db(begin_date, log):
             insert_jobs.append(project[0])
 
     # 检查是否已经统计
+    print check_jobs
     jobs = sql.check_jobs_in_db(check_jobs)
     # 根据状态，选择需要统计的宝贝评论，如果更新时间不是同一天，更新状态，再统计，
     # 同一天，就忽略
@@ -236,6 +237,10 @@ if __name__ == '__main__':
 
     # 读取数据库的ids
     treasure_ids, p_ids = read_db(created, log)
+    if len(treasure_ids) == 1:
+        treasure_ids = list(treasure_ids)
+        treasure_ids.append(treasure_ids[0])
+        treasure_ids = tuple(treasure_ids)
     log.info('Having %d treasures to do' % len(treasure_ids))
     insert_data(get_data(treasure_ids, begin_date, created, log, stop_word), treasure_ids, log)
 
