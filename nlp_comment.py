@@ -108,7 +108,7 @@ def insert_data(insert_list, ids, log):
 
 
 def nlp_process_with_sw(data, model, s_w):
-    content = data['RateContent']
+    content = data['rateContent']
     res_s = SnowNLP(content)
     words = pseg.cut(content)
     new_sent = defaultdict(list)
@@ -181,7 +181,7 @@ def get_data(ids,  b_date, end_data, log, stop_word):
             'TreasureID': df.iloc[record_data]['TreasureID'],
             'Level': level,
             'Tag': tag,
-            'Sentence': df.iloc[record_data]['RateContent'],
+            'Sentence': df.iloc[record_data]['rateContent'],
         })
     return res
 
