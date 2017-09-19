@@ -19,12 +19,20 @@ from datetime import datetime as dt
 from tgrocery import Grocery
 
 import sql
+from pymongo import MongoClient
 
 # 调用 readLines 读取停用词
 # BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'chat_data_mining', 'DM_sentiment')
 BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),'nlp')
 
 TABLE = 'T_DCR_Comment'
+
+MONGO_HOST = '192.168.3.172'
+
+
+def init_mongo_sql(host=MONGO_HOST):
+    conn = MongoClient(host, 27017)
+    return conn
 
 
 def log_init(file_name):
@@ -123,6 +131,23 @@ def load_data(id_list, begin_date, end_date):
     return pd.io.sql.read_sql(sql_text, con=conn)
 
 
+def load_data_mongo(id_list, begin_date, end_date):
+    conn = init_mongo_sql()
+    table = conn.CommentDB.commentContentTB
+    # commentContentTB
+    datas = table.find(
+        {
+            'TreasureID': {'$in': id_list},
+            'RateDate': {"$gte": begin_date},
+            'RateDate': {"$lte": end_date},
+        },
+        {'_id': 0, 'TreasureID': 1, 'rateContent': 1, 'RateDate': 1},
+    )
+    df = pd.DataFrame(list(datas))
+    df['RateDate'] = df['RateDate'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
+    return df.drop_duplicates()
+
+
 def load_data_excel():
     df = pd.read_excel('data_treasure_4.xls')
     df['RateDate'] = pd.to_datetime(df['RateDate'])
@@ -131,10 +156,10 @@ def load_data_excel():
 
 
 def get_data(ids,  b_date, end_data, log, stop_word):
-    b_date = b_date.strftime('%Y-%m-%d')
-    end_data = end_data.strftime('%Y-%m-%d')
+    # b_date = b_date.strftime('%Y-%m-%d')
+    # end_data = end_data.strftime('%Y-%m-%d')
     # 选择数据来源
-    df = load_data(ids, b_date, end_data)
+    df = load_data_mongo(ids, b_date, end_data)
     # df = load_data_excel()
     # df = pd.read_excel('data_treasure.xls')
     df['RateDate'] = pd.to_datetime(df['RateDate'])
@@ -182,18 +207,18 @@ def read_xls(filename):
 
 
 def read_db(begin_date, log):
-    begin_date_stamp = (begin_date - timedelta(days=1)).strftime('%Y-%m-%d')
-    projects = sql.get_project_data(begin_date_stamp)
-    log.info('having %d projects today.' % len(projects))
+    begin_date_stamp = (begin_date - timedelta(days=1))
+    projects = sql.get_project_data_mongo(begin_date_stamp)
+    # log.info('having %d projects today.' % len(projects))
     insert_jobs = list()
     check_jobs = list()
     # 区分任务
     for project in projects:
-        if project[1] != 1:
+        if project['ItemStatus'] != 1:
             # 可以去统计
-            check_jobs.append(project[0])
+            check_jobs.append(project['ItemID'])
             # 初始所有jobs 都是新的
-            insert_jobs.append(project[0])
+            insert_jobs.append(project['ItemID'])
 
     # 检查是否已经统计
     print check_jobs
@@ -203,7 +228,7 @@ def read_db(begin_date, log):
     project_ids = list()
     today = begin_date.replace(begin_date.year, begin_date.month, begin_date.day, 0, 0)
     for job in jobs:
-        tmp_time =  dt.strptime(job[1].split('.')[0], '%Y-%m-%d %H:%M:%S')
+        tmp_time = dt.strptime(job[1].split('.')[0], '%Y-%m-%d %H:%M:%S')
         if tmp_time < today:
             project_ids.append(job[0])
 
@@ -217,10 +242,10 @@ def read_db(begin_date, log):
     if len(project_ids) == 0:
         log.info('Do not have new work to do and finish .....')
         exit(0)
-    res = sql.find_treasure_ids(project_ids)
+    res = sql.find_treasure_ids_mongo(project_ids)
     t_ids = list()
     for t_id in res:
-        t_ids.append(str(t_id[0]))
+        t_ids.append(str(t_id['TreasureID']))
     return tuple(t_ids), project_ids
 
 
@@ -237,10 +262,10 @@ if __name__ == '__main__':
 
     # 读取数据库的ids
     treasure_ids, p_ids = read_db(created, log)
-    if len(treasure_ids) == 1:
-        treasure_ids = list(treasure_ids)
-        treasure_ids.append(treasure_ids[0])
-        treasure_ids = tuple(treasure_ids)
+    # if len(treasure_ids) == 1:
+    #     treasure_ids = list(treasure_ids)
+    #     treasure_ids.append(treasure_ids[0])
+    #     treasure_ids = tuple(treasure_ids)
     log.info('Having %d treasures to do' % len(treasure_ids))
     insert_data(get_data(treasure_ids, begin_date, created, log, stop_word), treasure_ids, log)
 
@@ -250,3 +275,7 @@ if __name__ == '__main__':
     log.info('------ Finish: %s  -------' % str(treasure_ids))
 
     log.info('-------------Finish the work---------------')
+
+    # dd = load_data_mongo(("36809342636", "36809342636"), begin_date, created)
+    # print dd.head()
+    # read_db(begin_date, None)

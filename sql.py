@@ -18,6 +18,16 @@ HOST_190 = '192.168.1.190:1433'
 DB_DM = 'DataMining'
 
 
+MONGO_HOST = '192.168.3.172'
+
+from pymongo import MongoClient
+
+
+def init_mongo_sql(host=MONGO_HOST):
+    conn = MongoClient(host, 27017)
+    return conn
+
+
 class Mssql:
     def __init__(self, host, user, pwd, db):
         self.host = host
@@ -98,6 +108,17 @@ def get_project_data(begin_date):
     return conn.exec_query(sql_text)
 
 
+def get_project_data_mongo(begin_date):
+    conn = init_mongo_sql()
+    table = conn.CommentDB.commProjectTB
+    # commentContentTB
+    datas = table.find(
+        {'ModifyTime': {"$gte": begin_date}},
+        {'_id': 0, 'ItemID': 1, 'ItemStatus': 1}
+    )
+    return datas
+
+
 def check_jobs_in_db(itemids):
     # 根据状态，选择需要统计的宝贝评论，如果更新时间不是同一天，更新状态，再统计，
     # 同一天，但状态是没有统计，就统计，已经统计，就忽略
@@ -119,6 +140,17 @@ def find_treasure_ids(itemids):
     conn = Mssql(HOST_253, USER, PWD, DB)
     sql_text = "SELECT TreasureID FROM T_Treasure_EvalCustomItem_Detail WHERE ItemID in {ids}".format(ids=itemids)
     return conn.exec_query(sql_text)
+
+
+def find_treasure_ids_mongo(itemids):
+    conn = init_mongo_sql()
+    table = conn.CommentDB.commentCustomItemDetailTB
+    # commentContentTB
+    datas = table.find(
+        {'ItemID': {'$in': itemids}},
+        {'_id': 0, 'TreasureID': 1},
+    )
+    return datas
 
 
 def finish_jobs(project_ids, modify_date):
